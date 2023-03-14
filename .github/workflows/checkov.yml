@@ -17,4 +17,4 @@ jobs:
         pip3 install checkov
     - name: Run Checkov
       run: |
-        checkov -d /Dockerfile
+        checkov -d . -o file-checkov
