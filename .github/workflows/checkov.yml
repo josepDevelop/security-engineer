@@ -1,20 +1,40 @@
-name: Checkov
+name: Checkov IAC Analysis
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
 
 jobs:
   checkov:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Checkov
-      run: |
-        sudo apt-get update && sudo apt-get install -y python3-pip
-        pip3 install checkov
-    - name: Run Checkov
-      run: |
-        checkov -d . --repo-id josepDevelop/security-engineer -o cyclonedx
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Checkov
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install checkov
+      - name: Test with Checkov
+        id: checkov
+        run: |
+          checkov -d . -o json | tee checkov-output.json
+          echo '::set-output name=checkov-output::$(cat checkov-output.json)'
+      - name: Upload Checkov Output Artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: checkov-output
+          path: checkov-output.json
+
+      - name: Show Checkov Results
+        if: ${{ steps.checkov.outcome == 'success' }}
+        run: |
+          echo "${{ steps.checkov.outputs.checkov-output }}"
